@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <h1>Employee Management System</h1>
+    <title>Employee Table</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="//code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin: 20px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        form {
+            margin: 20px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+
+        label {
+            display: inline-block;
+            width: 120px;
+            margin-right: 10px;
+        }
+
+        input[type="text"] {
+            padding: 6px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            margin: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #3e8e41;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 20px;
+        }
+            </style>
+        </head>
+        <body>
+            <table id="employee-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <br>
+            <button onclick="addEmployee()">Add Employee</button>
+            <br><br>
+            <div id="add-employee-form" style="display:none">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name"><br><br>
+                <label for="department">Department:</label>
+                <input type="text" id="department" name="department"><br><br>
+                <button onclick="saveEmployee()">Save</button>
+                <button onclick="cancelAddEmployee()">Cancel</button>
+            </div>
+            <br>
+            <script>
+                    function loadEmployees() {
+                $.ajax({
+                    url: "http://fake-api-activity.test/employee/",
+                    type: "GET",
+                    dataType: "json",
+                    success: function(response) {
+                        var employeeTable = $("#employee-table tbody");
+                        employeeTable.empty();
+                        $.each(response, function(index, employee) {
+                            var row = $("<tr><td>" + employee.id + "</td><td id='name-" + employee.id + "'>" + employee.name + "</td><td id='department-" + employee.id + "'>" + employee.department + "</td><td><button onclick='editEmployee(" + employee.id + ")'>Edit</button></td><td><button onclick='deleteEmployee(" + employee.id + ")'>Delete</button></td></tr>");
+                            employeeTable.append(row);
+                        });
+                    }
+                });
+            }
+
+                    function addEmployee() {
+                        $("#add-employee-form").show();
+                    }
+
+                    function cancelAddEmployee() {
+                        $("#add-employee-form").hide();
+                        $("#name").val("");
+                        $("#department").val("");
+                    }
+
+                    function saveEmployee() {
+                        var name = $("#name").val();
+                        var department = $("#department").val();
+                        $.ajax({
+                            url: "http://fake-api-activity.test/employee/",
+                            type: "POST",
+                            data: { name: name, department: department },
+                            dataType: "json",
+                            success: function(response) {
+                                loadEmployees();
+                                cancelAddEmployee();
+                            }
+                        });
+                    }
+                    function editEmployee(id) {
+                         var name = $("#name-" + id).text();
+                         var department = $("#department-" + id).text();
+
+                         var form = $("<form><label>Name:</label><input type='text' name='name' value='" + name + "'><br><label>Department:</label><input type='text' name='department' value='" + department + "'></form>");
+
+                            form.dialog({
+                                title: "Edit Employee",
+                                buttons: {
+                                    "Update": function() {
+                                        $.ajax({
+                                            url: "http://fake-api-activity.test/employee/" + id,
+                                            type: "PUT",
+                                            dataType: "json",
+                                            data: form.serialize(),
+                                            success: function(response) {
+                                                $("#name" + id).parent().remove();
+                                                var employeeTable = $("#employee-table tbody");
+                                                var row = $("<tr><td>" + response.id + "</td><td id='name" + response.id + "'>" + response.name + "</td><td id='department" + response.id + "'>" + response.department + "</td><td><button onclick='editEmployee(" + response.id + ")'>Edit</button></td><td><button onclick='deleteEmployee(" + response.id + ")'>Delete</button></td></tr>");
+                                                employeeTable.append(row);
+                                            },
+                                            error: function(jqXHR, textStatus, errorThrown) {
+                                                (textStatus, errorThrown);
+                                            }
+                                        });
+                                        $(this).dialog("close");
+                                    },
+                                    "Cancel": function() {
+                                        $(this).dialog("close");
+                                    }
+                                }
+                            });
+                        }
+
+                    function deleteEmployee(id) {
+                        if(confirm("Are you sure you want to delete this employee?")) {
+                            $.ajax({
+                                url: "http://fake-api-activity.test/employee/",
+                                type: "DELETE",
+                                data: { id: id },
+                                dataType: "json",
+                                success: function(response) {
+                                    loadEmployees();
+                                }
+                            });
+                        }
+                    }
+
+                    $(document).ready(function() {
+                        loadEmployees();
+                    });
+          </script>
+    </body>
+</html>
